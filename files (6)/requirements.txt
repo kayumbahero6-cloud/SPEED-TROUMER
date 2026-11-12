@@ -1,0 +1,1 @@
+# no Python packages needed - this is a static game (server.py only serves the files)

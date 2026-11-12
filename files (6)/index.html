@@ -1,0 +1,158 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>SPEED CRISIS</title>
+<style>
+*{box-sizing:border-box;margin:0;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:#05070d;color:#fff;font:600 16px system-ui,sans-serif;touch-action:none}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+.s{position:fixed;inset:0;display:none;padding:max(3vh,env(safe-area-inset-top)) 5vw}
+.s.on{display:flex}
+h1{font:italic 900 clamp(34px,8vw,88px)/1 system-ui;letter-spacing:.04em;text-shadow:0 4px 20px #000}h1 b{color:#ff2b3a}
+.btn{display:block;margin:6px 0;padding:11px 26px;background:#000a;border-left:6px solid #ff2b3a;font:italic 800 19px system-ui;text-transform:uppercase;transform:skewX(-12deg);cursor:pointer;min-width:230px}
+.btn:hover,.btn:active{background:#ff2b3a}.btn[disabled]{opacity:.35;pointer-events:none}.btn small{display:block;font:600 12px system-ui;opacity:.8}
+.col{flex-direction:column;justify-content:center}
+#lg{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:4px 14px;overflow:auto;max-height:70vh;margin:10px 0;touch-action:pan-y}
+.b{margin:4px 0;font-size:12px;width:260px}.b i{display:block;height:6px;background:#ff2b3a;margin-top:2px}
+.set{margin:8px 0;display:flex;gap:14px;align-items:center}input{touch-action:auto}
+#hud{pointer-events:none;display:none}
+#hud>*{position:fixed}
+#sp{left:5vw;bottom:6vh;font:italic 900 64px system-ui;text-shadow:0 2px 10px #000}#sp small{font-size:18px}
+#tm{top:3vh;left:50%;transform:translateX(-50%);font:italic 900 40px system-ui}
+#pb,#nb{height:8px;background:#fff3}#pb{top:12vh;left:30vw;width:40vw}#nb{left:5vw;bottom:4vh;width:200px}
+#pb i,#nb i{display:block;height:100%;background:#ff2b3a;width:0}#nb i{background:#2bd4ff}
+#cd{top:30vh;width:100%;text-align:center;font:italic 900 110px system-ui}#tt{top:20vh;width:100%;text-align:center;font:900 28px system-ui;color:#ffd84a}
+#x{top:2vh;right:3vw;pointer-events:auto;font-size:26px;cursor:pointer}
+#tc{display:none}.tcc #tc{display:block}
+.tb{position:fixed;pointer-events:auto;width:84px;height:84px;border-radius:50%;background:#fff3;border:2px solid #fff8;display:flex;align-items:center;justify-content:center;font:800 13px system-ui;touch-action:none}
+#ld{position:fixed;top:8px;right:12px;font-size:13px;z-index:5;color:#ffd84a}
+#rot{position:fixed;inset:0;background:#000e;z-index:99;display:none;align-items:center;justify-content:center;font:800 24px system-ui;text-align:center}
+@media (pointer:coarse) and (orientation:portrait){#rot{display:flex}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head><body>
+<div id="ld"></div><div id="rot">↻ Rotate your phone<br>to landscape</div>
+<div id="menu" class="s on col"><h1>SPEED <b>CRISIS</b></h1><br>
+<div class="btn" data-a="career">Career</div><div class="btn" data-a="quick">Quick Race</div><div class="btn" data-a="garage">Garage</div><div class="btn" data-a="opts">Settings</div></div>
+<div id="levels" class="s col"><h1 style="font-size:40px">CAREER</h1><div id="lg"></div><div class="btn" data-a="menu">Back</div></div>
+<div id="garage" class="s" style="flex-direction:column;justify-content:flex-end;padding-bottom:5vh"><h1 id="gn" style="font-size:40px"></h1><div id="gs"></div><br>
+<div style="display:flex;gap:10px;flex-wrap:wrap"><div class="btn" data-a="prev" style="min-width:0">◀</div><div class="btn" data-a="next" style="min-width:0">▶</div><div class="btn" data-a="flip" style="min-width:0">Flip 180°</div><div class="btn" data-a="menu" style="min-width:0">Select</div></div></div>
+<div id="opts" class="s col"><h1 style="font-size:40px">SETTINGS</h1><br>
+<div class="set">Graphics <div class="btn" data-a="q" id="qb" style="min-width:140px"></div></div>
+<div class="set">Sky <div class="btn" data-a="sky" id="sb" style="min-width:160px"></div></div>
+<div class="set">Volume <input id="vol" type="range" min="0" max="1" step=".05"></div>
+<div class="set">Field of view <input id="fov" type="range" min="55" max="95"></div>
+<div class="set">Tilt steering (phone) <div class="btn" data-a="tilt" id="tb" style="min-width:100px"></div></div>
+<div style="font-size:13px;opacity:.7">PC: W/S or ↑/↓ drive · A/D or ←/→ steer · Space handbrake · Shift nitro · C camera · R reset · Esc quit</div>
+<div class="btn" data-a="menu">Back</div></div>
+<div id="end" class="s col" style="align-items:center;text-align:center"><h1 id="et"></h1><br><div class="btn" data-a="retry">Retry</div><div class="btn" data-a="nextl" id="nl">Next level</div><div class="btn" data-a="menu">Main menu</div></div>
+<div id="hud" class="s"><div id="sp">0<small> km/h</small></div><div id="tm"></div><div id="pb"><i></i></div><div id="nb"><i></i></div><div id="cd"></div><div id="tt"></div><div id="wn" style="top:16vh;width:100%;text-align:center;font:900 22px system-ui;color:#2bd4ff"></div><div id="x" data-a="quit">✕</div>
+<div id="tc"><div class="tb" data-k="l" style="left:4vw;bottom:22vh">◀</div><div class="tb" data-k="r" style="left:calc(4vw + 96px);bottom:8vh">▶</div>
+<div class="tb" data-k="g" style="right:4vw;bottom:8vh">GAS</div><div class="tb" data-k="b" style="right:calc(4vw + 96px);bottom:8vh">BRAKE</div><div class="tb" data-k="n" style="right:4vw;bottom:calc(8vh + 96px)">NITRO</div><div class="tb" data-k="h" style="right:calc(4vw + 96px);bottom:calc(8vh + 96px)">DRIFT</div></div></div>
+<script type="module">
+import*as T from 'three';import{GLTFLoader}from 'three/addons/loaders/GLTFLoader.js';
+const $=id=>document.getElementById(id),clamp=(x,a,b)=>Math.min(b,Math.max(a,x)),A='assets/';
+// ---- DATA: [name,file,topKmh,accel(1-10),grip(1-10)] ----
+const CARS=[['Ferrari Monza SP1','ferrari_monza_sp1_2019__www_vecarz_com__1__-_Copy.glb',310,9,7],['Lamborghini Huracán Trofeo','lamborghini_huracan_trofeo__www_vecarz_com__1__-_Copy.glb',320,8,9],['Nissan GT-R Legend','nissan_gtr_legendary_nfs__www_vecarz_com_-_Copy.glb',315,8,8],['Toyota GR Supra GT300','toyotagr_supra_gt300__www_vecarz_com_-_Copy.glb',300,7,9],['Jaguar Vision GT','jaguar_vision_gt_coupe_-_Copy.glb',350,8,7],['McLaren F1','mclaren_f1__1__-_Copy.glb',390,7,6],['Dodge SRT Tomahawk X','dodge_srt_tomahawk_x_vision_gt4__www_vecarz_com_-_Copy.glb',400,9,5],['Hennessey Venom Roadster','hennessey_venom_roadster_2023__www_vecarz_com_-_Copy.glb',430,10,4],['Lancia Fulvia Rallye','lancia_fulvia_rallye.glb',210,6,10],['Red Sports Car','animated_red_sports_car_with_driver_loop.glb',300,8,8],['Ford Shelby GT500 Patrol','2013_ford_shelby_gt500_-_patrol.glb',320,8,7],['Ford F-150 Raptor Police','ford_f150_raptor_police__2026_update.glb',240,6,6],['Chevrolet K5 Blazer','1978_chevrolet_blazer_k5_cheyenne.glb',190,5,6]];
+const COP=2;
+const TRACKS=[['Weinberge','gt_racing_2_-_weinberge_-_Copy.glb','day',1],['Top Speed Oval','gt_racing_2_-_topspeed_oval_-_Copy.glb','basic',1],['Barcelona','gt_racing_2_-_barcelona_-_Copy.glb','day',1],['Lake Como','gt_racing_2_-_lake_como_-_Copy.glb','evening',1],['Barcelona GP','gt_racing_2_-_barcelona__1__-_Copy.glb','basic',1],['Montreal','gt_racing_2_-_montreal_-_Copy.glb','night',1],['Karting Club Lider','karting_club_lider__race_track_outdated_-_Copy.glb','day',1],['Halo Chasm','locationshalo_3firefightodstchasm_ten.glb','galaxy',0],['Burnin Rubber Hangar','burnin_rubber_3_hangar.glb','night',0],['Underground Garage','basement_parking_garage_environment_underground.glb','night',0]];
+const SKIES={evening:'hdri_-_sky_box_8k_-_ghostly_evening_garden_-_Copy.glb',basic:'free_-_skybox_basic_sky.glb',galaxy:'inside_galaxy_skybox_hdri_360_panorama.glb',milky:'milky_way_skybox_hdri_panorama.glb',day:'sky_day.jpg',night:'sky_night.jpg'},SK=Object.keys(SKIES);
+const LEVELS=[...Array(20)].map((_,i)=>{const t=i<14?i%7:7+(i-14)%3,d=1500+i*300,x=i<14?(i<7?' I':' II'):(i<17?' I':' II');return{n:TRACKS[t][0]+x,t,d,time:Math.round(d/(24+i*.9))}});
+let S={car:0,lv:1,flip:{},q:1,vol:.5,fov:70,tilt:0,sky:'auto',best:{}};try{Object.assign(S,JSON.parse(localStorage.sc))}catch(e){}
+const save=()=>{try{localStorage.sc=JSON.stringify(S)}catch(e){}};
+if(matchMedia('(pointer:coarse)').matches)document.body.classList.add('tcc');
+// ---- 3D setup ----
+const R=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});R.toneMapping=T.ACESFilmicToneMapping;document.body.prepend(R.domElement);
+const sc=new T.Scene(),cam=new T.PerspectiveCamera(45,1,.1,8000);sc.background=new T.Color(0x1a2438);
+sc.add(new T.HemisphereLight(0xcfe0ff,0x445533,1.6));const sun=new T.DirectionalLight(0xffe2b0,2.5);sun.position.set(50,100,30);sc.add(sun);
+const floor=new T.Mesh(new T.CircleGeometry(8,48).rotateX(-Math.PI/2),new T.MeshStandardMaterial({color:0x14161c,metalness:.6,roughness:.35}));sc.add(floor);
+const trackG=new T.Group(),car=new T.Group();sc.add(trackG,car);trackG.visible=false;let sky,pv;
+const rs=()=>{R.setPixelRatio(Math.min(devicePixelRatio,[.75,1,2][S.q]));R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()};addEventListener('resize',rs);rs();
+const ld=t=>$('ld').textContent=t,GL=new GLTFLoader(),cache={},prepd={};
+const MAN=fetch(A+'manifest.json').then(r=>r.json()).catch(()=>({}));
+const load=f=>cache[f]||(cache[f]=(async()=>{try{const m=(await MAN)[f]||[f];let n=0;const ps=await Promise.all(m.map(async x=>{const r=await fetch(A+x);if(!r.ok)throw new Error(x);const b=await r.arrayBuffer();ld('Loading '+(++n)+'/'+m.length);return new Uint8Array(b)}));
+const u=new Uint8Array(ps.reduce((a,b)=>a+b.length,0));let o=0;for(const b of ps){u.set(b,o);o+=b.length}return await new Promise((ok,no)=>GL.parse(u.buffer,A,g=>ok(g.scene),no))}catch(e){delete cache[f];throw e}})());
+function prep(o){const p=new T.Group();p.add(o);const b=new T.Box3().setFromObject(o),z=b.getSize(new T.Vector3());if(z.x>z.z)o.rotation.y=Math.PI/2;o.updateMatrixWorld(true);b.setFromObject(o);b.getSize(z);o.scale.setScalar(4.6/Math.max(z.x,z.z));o.updateMatrixWorld(true);b.setFromObject(o);const c=b.getCenter(new T.Vector3());o.position.set(-c.x,-b.min.y,-c.z);return p}
+async function setCar(i){ld('Loading car…');try{const o=await load(CARS[i][1]);pv=prepd[i]||(prepd[i]=prep(o));pv.rotation.y=S.flip[i]?Math.PI:0;car.clear();car.add(pv);ld('')}catch(e){ld('Missing assets/'+CARS[i][1])}}
+let skyK;
+async function setSky(key){if(key==skyK||!SKIES[key])return;skyK=key;if(sky){sc.remove(sky);sky=null}const f=SKIES[key];sky=new T.Group();
+try{if(f.endsWith('.jpg')){const t=await new T.TextureLoader().loadAsync(A+f);t.colorSpace=T.SRGBColorSpace;const m=new T.Mesh(new T.SphereGeometry(3000,48,24),new T.MeshBasicMaterial({map:t,side:T.DoubleSide,depthWrite:false,fog:false,toneMapped:false}));m.scale.x=-1;m.renderOrder=-1;m.frustumCulled=false;sky.add(m)}
+else{const o=await load(f),b=new T.Box3().setFromObject(o),z=b.getSize(new T.Vector3()),k=3000/Math.max(z.x,z.y,z.z);o.scale.setScalar(k);o.position.copy(b.getCenter(new T.Vector3()).multiplyScalar(-k));o.traverse(m=>{if(m.isMesh){[].concat(m.material).forEach(q=>{q.side=T.DoubleSide;q.depthWrite=false;q.fog=false});m.renderOrder=-1;m.frustumCulled=false}});sky.add(o)}
+sc.add(sky);sc.background=null}catch(e){skyK=null;sky=null}}
+setSky('evening');
+
+// ---- track + spawn ----
+let meshes=[],hasRoad=false,tb,P=new T.Vector3(),yaw=0,safe;const RD=/road|asphalt|track|tarmac|street|strecke/i,rc=new T.Raycaster(),DN=new T.Vector3(0,-1,0),nrm=h=>h.face.normal.clone().transformDirection(h.object.matrixWorld);
+const ground=(x,y,z,far)=>{rc.set(new T.Vector3(x,y,z),DN);rc.far=far;return rc.intersectObjects(meshes,false).find(h=>h.face&&nrm(h).y>.5)};
+const okRoad=h=>h&&(!hasRoad||RD.test(h.object.name+(h.object.material?.name||'')));
+async function setTrack(i){const o=await load(TRACKS[i][1]);trackG.clear();trackG.add(o);o.updateMatrixWorld(true);meshes=[];hasRoad=false;o.traverse(m=>{if(m.isMesh){meshes.push(m);if(RD.test(m.name+(m.material?.name||'')))hasRoad=true}});tb=new T.Box3().setFromObject(o);spawn();setSky(S.sky=='auto'?TRACKS[i][2]:S.sky);
+if(TRACKS[i][3]){const gt=n=>{const t=new T.TextureLoader().load(A+n);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(300,300);t.anisotropy=4;return t},c=tb.getCenter(new T.Vector3()),m=new T.Mesh(new T.PlaneGeometry(6000,6000).rotateX(-Math.PI/2),new T.MeshStandardMaterial({map:gt('ground_color.jpg'),normalMap:gt('ground_normal.jpg'),roughnessMap:gt('ground_rough.jpg')}));m.material.map.colorSpace=T.SRGBColorSpace;m.position.set(c.x,tb.min.y-.4,c.z);trackG.add(m)}
+load('finish_line.glb').then(f=>{const b=new T.Box3().setFromObject(f),z=b.getSize(new T.Vector3()),c=b.getCenter(new T.Vector3()),k=12/Math.max(z.x,z.z),w=new T.Group();f.scale.setScalar(k);f.position.set(-c.x*k,-b.min.y*k,-c.z*k);w.add(f);w.rotation.y=yaw+(z.x<z.z?Math.PI/2:0);w.position.set(P.x+Math.sin(yaw)*8,P.y,P.z+Math.cos(yaw)*8);trackG.add(w)}).catch(()=>{})}
+function spawn(){const b=tb,c=b.getCenter(new T.Vector3()),N=40;let best,bd=1e18;for(let i=0;i<=N;i++)for(let j=0;j<=N;j++){const x=b.min.x+(b.max.x-b.min.x)*i/N,z=b.min.z+(b.max.z-b.min.z)*j/N,h=ground(x,b.max.y+5,z,b.max.y-b.min.y+20);if(okRoad(h)){const d=(x-c.x)**2+(z-c.z)**2;if(d<bd){bd=d;best=h.point}}}
+if(!best){const h=ground(c.x,b.max.y+5,c.z,1e5);best=h?h.point:new T.Vector3(c.x,b.max.y,c.z)}
+let by=0,bc=-1;for(let k=0;k<12;k++){const a=k*Math.PI/6;let n=0;for(let s=1;s<=30;s++){const h=ground(best.x+Math.sin(a)*s*4,best.y+3,best.z+Math.cos(a)*s*4,12);if(okRoad(h)&&Math.abs(h.point.y-best.y)<2)n++;else break}if(n>bc){bc=n;by=a}}
+P.copy(best);yaw=by;safe={p:P.clone(),y:yaw}}
+// ---- input ----
+const k={},TC={};let tilt=0,mode='menu',G,v=0,vy=0,drift=0,nit=1,cm=0,fr=0,wall=false,sT=0;
+addEventListener('keydown',e=>{k[e.code]=1;if(e.code=='KeyC')cm=(cm+1)%3;if(e.code=='KeyR'&&mode=='race')respawn();if(e.code=='Escape'&&mode=='race')act.quit();if(e.code.startsWith('Arrow')||e.code=='Space')e.preventDefault()});addEventListener('keyup',e=>k[e.code]=0);
+document.querySelectorAll('.tb').forEach(el=>{const d=el.dataset.k;el.onpointerdown=e=>{TC[d]=1;e.preventDefault()};['pointerup','pointercancel','pointerleave'].forEach(n=>el['on'+n]=()=>TC[d]=0)});
+addEventListener('deviceorientation',e=>{const a=screen.orientation?.angle??window.orientation??0;const t=a==90?-e.beta:(a==270||a==-90)?e.beta:e.gamma;tilt=clamp((t||0)/25,-1,1)});
+// ---- audio ----
+let au,osc,gn;function aud(){if(au)return;try{au=new(window.AudioContext||webkitAudioContext)();osc=au.createOscillator();osc.type='sawtooth';gn=au.createGain();gn.gain.value=0;osc.connect(gn).connect(au.destination);osc.start()}catch(e){}}
+// ---- police ----
+let cp,copM;
+async function spawnCop(){try{const o=await load(CARS[COP][1]);copM=(prepd[COP]||(prepd[COP]=prep(o))).clone();sc.add(copM);cp={p:new T.Vector3(P.x-Math.sin(yaw)*40,P.y,P.z-Math.cos(yaw)*40),y:yaw,v:0}}catch(e){G.cop=false}}
+function copTick(dt){const dx=P.x-cp.p.x,dz=P.z-cp.p.z,d=Math.hypot(dx,dz);let da=Math.atan2(dx,dz)-cp.y;da=Math.atan2(Math.sin(da),Math.cos(da));cp.y+=clamp(da,-2*dt,2*dt);
+const tv=Math.min(70,CARS[S.car][2]/3.6*.85+(d>60?15:0));cp.v+=(tv-cp.v)*dt*.6;cp.p.x+=Math.sin(cp.y)*cp.v*dt;cp.p.z+=Math.cos(cp.y)*cp.v*dt;
+const h=ground(cp.p.x,cp.p.y+2.5,cp.p.z,8);if(h)cp.p.y+=(h.point.y-cp.p.y)*clamp(18*dt,0,1);copM.position.copy(cp.p);copM.rotation.y=cp.y;
+if(d<7){G.bust+=dt;if(G.bust>3)fin(false,'BUSTED')}else G.bust=Math.max(0,G.bust-dt*.5);$('wn').textContent=d<30?'🚔 POLICE '+Math.round(d)+' m':''}
+// ---- race ----
+const toast=t=>{$('tt').textContent=t;setTimeout(()=>$('tt').textContent='',1500)};
+function respawn(){P.copy(safe.p);yaw=safe.y;v=0;vy=0}
+function race(dt){const[,,top,ac,gr]=CARS[S.car];fr++;const go=G.cd<=0&&!G.done;
+if(G.cd>0){G.cd-=dt;$('cd').textContent=G.cd>0?Math.ceil(G.cd):'GO';if(G.cd<=0)setTimeout(()=>$('cd').textContent='',700)}
+const up=go&&(k.ArrowUp||k.KeyW||TC.g),dn=go&&(k.ArrowDown||k.KeyS||TC.b),hb=go&&(k.Space||TC.h),nt=go&&(k.ShiftLeft||k.ShiftRight||TC.n);
+let st=((k.ArrowRight||k.KeyD||TC.r)?1:0)-((k.ArrowLeft||k.KeyA||TC.l)?1:0);if(S.tilt)st=tilt;if(!go)st=0;
+const useN=nt&&nit>0&&v>5,tp=top/3.6*(useN?1.3:1),sp=Math.abs(v);
+if(up)v+=(4+ac*.9)*(1-Math.pow(clamp(v/tp,0,1),3))*dt*(v<0?3:1);
+if(useN){v+=14*dt;nit-=.25*dt}else if(v>25)nit=Math.min(1,nit+.05*dt);
+if(dn)v-=(v>0?35:8)*dt;if(hb)v-=7*dt;v=Math.max(v,-12);v-=v*(up?.03:.25)*dt;
+const f=clamp(sp/10,0,1)*(1.9-clamp(sp/tp,0,1)*1.1)*(.7+gr*.07)*(hb?1.5:1);yaw-=st*f*dt*(v<0?-1:1);
+drift+=((-st*.35*(hb?1.6:1)*clamp(sp/tp*2,0,1))-drift)*Math.min(1,5*dt);
+const fx=Math.sin(yaw),fz=Math.cos(yaw),sg=v<0?-1:1;
+if(fr%3==0&&sp>1){rc.set(new T.Vector3(P.x,P.y+.7,P.z),new T.Vector3(fx*sg,0,fz*sg));rc.far=2.6;const h=rc.intersectObjects(meshes,false)[0];wall=!!(h&&h.face&&Math.abs(nrm(h).y)<.5)}
+if(wall){v*=-.3;wall=false}
+P.x+=fx*v*dt;P.z+=fz*v*dt;const h=ground(P.x,P.y+2.5,P.z,8),onRoad=okRoad(h);
+if(h){P.y+=(h.point.y-P.y)*clamp(18*dt,0,1);vy=0;if(!onRoad)v-=v*1.2*dt;sT+=dt;if(onRoad&&sp>3&&sT>1){sT=0;safe={p:P.clone(),y:yaw}}}else{vy-=25*dt;P.y+=vy*dt;if(P.y<tb.min.y-60)respawn()}
+car.position.copy(P);car.rotation.y=yaw;pv.rotation.y=(S.flip[S.car]?Math.PI:0)+drift;car.visible=cm!=2;
+const dist=[7,11,-.6][cm],hh=[2.6,4.5,1.15][cm],tg=new T.Vector3(P.x-fx*dist,P.y+hh,P.z-fz*dist);cam.position.lerp(tg,cm==2?1:clamp(10*dt,0,1));cam.lookAt(P.x+fx*8,P.y+1.2,P.z+fz*8);
+cam.fov=S.fov+clamp(v/tp,0,1)*18+(useN?6:0);cam.updateProjectionMatrix();
+if(osc){osc.frequency.value=45+sp*3.2+(up?15:0);gn.gain.value=S.vol*.05}
+if(go){G.dist+=Math.max(0,v)*dt;G.time-=dt;if(G.dist>=G.nb&&G.nb<G.L.d){G.time+=8;G.nb+=500;toast('+8s')}if(G.dist>=G.L.d)fin(true);else if(G.time<=0)fin(false)}
+if(G.cop&&go)copTick(dt);$('sp').firstChild.nodeValue=Math.round(Math.abs(v)*3.6);$('tm').textContent=Math.max(0,G.time).toFixed(1);$('pb').firstChild.style.width=clamp(G.dist/G.L.d*100,0,100)+'%';$('nb').firstChild.style.width=nit*100+'%'}
+function fin(w,msg){G.done=true;mode='end';if(gn)gn.gain.value=0;const L=G.L;$('et').textContent=w?'LEVEL COMPLETE':(msg||'OUT OF TIME');$('nl').style.display=w&&G.i+1<LEVELS.length?'block':'none';
+if(w){const t=+G.time.toFixed(1);if(!S.best[G.i]||t>S.best[G.i])S.best[G.i]=t;if(G.i+1==S.lv&&S.lv<LEVELS.length)S.lv++;save()}show('end')}
+async function menuToLevel(i){ld('Loading track…');try{await setTrack(LEVELS[i].t)}catch(e){ld('Missing assets/'+TRACKS[LEVELS[i].t][1]);return}ld('');
+Promise.resolve(document.documentElement.requestFullscreen?.()).then(()=>screen.orientation?.lock?.('landscape')).catch(()=>{});aud();au?.resume();
+if(S.tilt&&window.DeviceOrientationEvent?.requestPermission)DeviceOrientationEvent.requestPermission().catch(()=>{});
+G={i,L:LEVELS[i],dist:0,time:LEVELS[i].time,nb:500,cd:3,done:false,bust:0,cop:i>=2};if(G.cop)await spawnCop();v=0;vy=0;nit=1;drift=0;floor.visible=false;trackG.visible=true;car.position.copy(P);car.rotation.y=yaw;
+cam.position.set(P.x-Math.sin(yaw)*7,P.y+3,P.z-Math.cos(yaw)*7);mode='race';show('hud')}
+// ---- UI ----
+const show=id=>document.querySelectorAll('.s').forEach(e=>e.classList.toggle('on',e.id==id));
+const bar=(l,p)=>`<div class="b">${l}<i style="width:${p}%"></i></div>`;
+async function showCar(){const[n,,tp,ac,gr]=CARS[S.car];$('gn').textContent=n;$('gs').innerHTML=bar('Top Speed '+tp+' km/h',tp/4.3)+bar('Acceleration',ac*10)+bar('Handling',gr*10);await setCar(S.car)}
+const lvls=()=>{$('lg').innerHTML=LEVELS.map((l,i)=>`<div class="btn" ${i<S.lv?`data-a="go" data-i="${i}"`:'disabled'}>${i+1}. ${l.n}<small>${l.d} m · ${l.time}s ${S.best[i]?'· best +'+S.best[i]+'s':''}</small></div>`).join('')};
+const setOpts=()=>{$('qb').textContent=['Low','Medium','High'][S.q];$('tb').textContent=S.tilt?'On':'Off';$('sb').textContent=S.sky;$('vol').value=S.vol;$('fov').value=S.fov};
+$('vol').oninput=e=>{S.vol=+e.target.value;save()};$('fov').oninput=e=>{S.fov=+e.target.value;save()};
+const toMenu=()=>{if(copM){sc.remove(copM);copM=null}$('wn').textContent='';setSky('evening');mode='menu';trackG.visible=false;floor.visible=true;car.visible=true;car.position.set(0,0,0);cam.fov=45;cam.updateProjectionMatrix();if(gn)gn.gain.value=0;show('menu');showCar()};
+const act={career(){lvls();show('levels')},quick(){menuToLevel(Math.min(S.lv,LEVELS.length)-1)},garage(){show('garage');showCar()},opts(){setOpts();show('opts')},menu(){toMenu()},
+prev(){S.car=(S.car+CARS.length-1)%CARS.length;save();showCar()},next(){S.car=(S.car+1)%CARS.length;save();showCar()},flip(){S.flip[S.car]=!S.flip[S.car];pv.rotation.y=S.flip[S.car]?Math.PI:0;save()},
+sky(){const a=['auto',...SK];S.sky=a[(a.indexOf(S.sky)+1)%a.length];save();setOpts();setSky(S.sky=='auto'?'evening':S.sky)},q(){S.q=(S.q+1)%3;save();rs();setOpts()},tilt(){S.tilt=S.tilt?0:1;save();setOpts();if(S.tilt&&window.DeviceOrientationEvent?.requestPermission)DeviceOrientationEvent.requestPermission().catch(()=>{})},
+go(el){menuToLevel(+el.dataset.i)},retry(){menuToLevel(G.i)},nextl(){menuToLevel(G.i+1)},quit(){toMenu()}};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(el)act[el.dataset.a](el)});
+// ---- loop ----
+const clk=new T.Clock();let dgr=0;
+(function tick(){requestAnimationFrame(tick);const dt=Math.min(clk.getDelta(),.05);if(sky)sky.position.copy(cam.position);
+if(mode=='race')race(dt);else if(mode=='menu'){dgr+=dt*.5;car.rotation.y=dgr;cam.position.set(6.5,1.7,6.5);cam.lookAt(0,.8,0)}
+R.render(sc,cam)})();
+showCar();if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>

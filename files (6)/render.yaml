@@ -1,0 +1,5 @@
+services:
+  - type: web
+    name: speed-crisis
+    runtime: static
+    staticPublishPath: .
